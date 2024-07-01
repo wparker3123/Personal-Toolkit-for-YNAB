@@ -1,0 +1,181 @@
+<!-- app/views/categories/index.html.erb -->
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Category Overview</title>
+  <style>
+    body {
+        font-family: 'Arial', sans-serif;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        # height: 100vh;
+        # height: 250vh;
+        height: auto;
+        background-color: #f4f4f9;
+        color: #333;
+    }
+
+    .container {
+        text-align: center;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        padding: 20px;
+        border-radius: 8px;
+        background: white;
+        max-width: 600px;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    h1 {
+        font-size: 24px;
+        color: #5a5a5a;
+    }
+
+    p {
+        font-size: 16px;
+        color: #666;
+    }
+
+    table {
+      margin: 0 auto;
+    }
+
+    @media (max-width: 600px) {
+        #assignments-by-category {
+          zoom: 200%;
+        }
+        h1 {
+            font-size: 20px;
+        }
+
+        p {
+            font-size: 14px;
+        }
+    }
+  </style>
+</head>
+<body>
+  <script>
+    window.testFn = function(event){
+        console.log("hello there");
+    }
+    window.testFn();
+  </script>
+  <div class="container">
+    <h1>Category Overview</h1>
+    <!--<%= pie_chart BudgetCategory.pluck(:name, :amount).to_h, prefix: "$", round: 2, zeros: true %>-->
+    <div id="assignments-by-category"></div>
+    <script type="text/javascript">
+      document.addEventListener('DOMContentLoaded', function() {
+        window.chartThing = Highcharts.chart('assignments-by-category', {
+          chart: {
+            type: 'pie'
+          },
+          credits: {
+      enabled: false
+         },
+          title: {
+            text: 'Assignments by Categories'
+          },
+          responsive: {
+        rules: [{
+            condition: {
+                maxWidth: 600 // Specify the max width for mobile screens
+            },
+            chartOptions: {
+                chart: {
+                    height: '500px' // Adjust height as needed for mobile
+                },
+                legend: {
+                    enabled: false,
+                    align: 'center',
+                    verticalAlign: 'bottom',
+                    layout: 'horizontal' // Adjust legend position and layout
+                },
+                plotOptions: {
+                    pie: {
+                        dataLabels: {
+                            enabled: false // Disable data labels on small screens
+                        },
+                        showInLegend: true
+                    }
+                }
+            }
+        }]
+          },
+          series: [{
+            name: 'Categories',
+            data: [
+              <% @categories.each_with_index do |category, index| %>
+                {
+                  name: '<%= j category.name %>',
+                  y: <%= category.amount %>,
+                  drilldown: '<%= j category.name %>'
+                }<%= ',' unless index == @categories.length - 1 %>
+              <% end %>
+            ]
+          }],
+          drilldown: {
+            series: [
+              <% @sub_categories.each_with_index do |category, index| %>
+                {
+                  id: '<%= j category.sub_categories[0]["group_name"] %>',
+                  data: [
+                    <% category.sub_categories.each_with_index do |sub_category, idx| %>
+                      ['<%= j sub_category["drilldown"][0] %>', <%= sub_category["drilldown"][1] %>]<%= ',' unless idx == category.sub_categories.length - 1 %>
+                    <% end %>
+                  ]
+                }<%= ',' unless index == @sub_categories.length - 1 %>
+              <% end %>
+            ]
+          }
+        });
+
+
+      console.log(window.chartThing)
+      window.colorMapping = window.chartThing.series[0].data.map((ser) => {return { color: ser.color, name: ser.name };});
+      decodeHtml = (html) => {
+        var textArea = document.createElement('textarea');
+        textArea.innerHTML = html;
+        var decodedText = textArea.value;
+        textArea.remove();
+        return decodedText;
+      }
+      window.getColor = (categoryName) => {
+        var nameList = window.colorMapping.map((obj) => {return decodeHtml(obj.name)})
+        if (nameList.find(name => name === categoryName)) {
+            var i = nameList.indexOf(categoryName);
+            return colorMapping.map((obj) => {return obj.color})[i]
+        }
+      };
+      <% @categories.each do |category| %>
+          var name = '<%== j category.name %>';
+          console.log(name);
+          var elem = document.getElementById(name);
+          elem.style.color = window.getColor(name);
+      <% end %>
+      });
+    </script>
+    <div style="text-align: center;">
+      <table>
+        <thead>
+          <tr>
+            <th>Category Name</th>
+            <th>Assigned Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @categories.each do |category| %>
+            <tr>
+              <td id='<%= j category.name %>'>&#x1f534;&#xfe0e; <%= category.name %></td>
+              <td><%= number_to_currency(category.amount) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</body>
