@@ -1,5 +1,5 @@
 # contains credentials for YNAB api
-config/app_environment_variables.rb
+# config/app_environment_variables.rb
 
 *.rbc
 capybara-*.html
