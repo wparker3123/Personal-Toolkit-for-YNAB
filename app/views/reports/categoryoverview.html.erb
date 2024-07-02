@@ -170,7 +170,7 @@
         <tbody>
           <% @categories.each do |category| %>
             <tr>
-              <td id='<%= j category.name %>'>&#x1f534;&#xfe0e; <%= category.name %></td>
+              <td id='<%= j category.name %>'> <%= icon('fas', 'circle')%> <%= category.name %></td>
               <td><%= number_to_currency(category.amount) %></td>
             </tr>
           <% end %>
