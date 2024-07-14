@@ -10,13 +10,22 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_06_24_213513) do
+ActiveRecord::Schema[7.1].define(version: 2024_07_13_234445) do
   create_table "budget_categories", force: :cascade do |t|
     t.string "name"
     t.decimal "amount", precision: 10, scale: 2
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.json "sub_categories"
   end
 
+  create_table "sub_categories", force: :cascade do |t|
+    t.string "group_name"
+    t.string "name"
+    t.float "budgeted"
+    t.integer "budget_category_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  add_foreign_key "sub_categories", "budget_categories"
 end

@@ -12,10 +12,13 @@ class ReportsController < ApplicationController
       { name: 'Meats', y: 30 }
     ]
 
-    @drilldown_series = [
-      { name: 'Vegetables', data: [['Potatoes', 10], ['Carrots', 15], ['Broccoli', 15]] },
-      { name: 'Fruits', data: [['Apples', 10], ['Oranges', 10], ['Bananas', 10]] },
-      { name: 'Meats', data: [['Chicken', 15], ['Beef', 10], ['Pork', 5]] }
-    ]
+    current_day = Date.today
+    month_list = ["#{current_day.strftime('%B')} (Current)"]
+    6.times do |i|
+      previous_month = current_day << (i + 1)
+      month_list.push(previous_month.strftime('%B'))
+    end
+
+    @dates = month_list
   end
 end

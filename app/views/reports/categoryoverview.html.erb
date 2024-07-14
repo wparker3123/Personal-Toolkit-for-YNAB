@@ -43,10 +43,28 @@
       margin: 0 auto;
     }
 
-    @media (max-width: 600px) {
-        #assignments-by-category {
-          zoom: 200%;
-        }
+    .custom-select {
+      width: 80%;
+      padding: 8px 16px; /* Padding inside the dropdown */
+      border: 1px solid #ccc; /* Light grey border */
+      border-radius: 4px; /* Rounded corners */
+      appearance: none; /* Removes default styling */
+      background-color: white;
+      background-image: icon('fas', 'circle');
+      background-repeat: no-repeat;
+      background-position: right 10px center; /* Position the arrow icon */
+      background-size: 12px; /* Size of the arrow icon */
+    }
+
+    /* Styles for the select dropdown when it is focused */
+    .custom-select:focus {
+      border-color: #007bff; /* Blue border on focus */
+      outline: none; /* Remove default focus outline */
+      box-shadow: 0 0 0 2px rgba(0,123,255,.25); /* Subtle focus shadow */
+    }
+
+
+    @media screen and (max-width: 600px) {
         h1 {
             font-size: 20px;
         }
@@ -67,42 +85,63 @@
   <div class="container">
     <h1>Category Overview</h1>
     <!--<%= pie_chart BudgetCategory.pluck(:name, :amount).to_h, prefix: "$", round: 2, zeros: true %>-->
+    <select name="product[category_id]" id="product_category_id" class="custom-select">
+      <option value="">Select a Month</option>
+      <% @dates.each do |month| %>
+        <option value="<%= month %>"><%= month %></option>
+      <% end %>
+    </select>
     <div id="assignments-by-category"></div>
     <script type="text/javascript">
       document.addEventListener('DOMContentLoaded', function() {
-        window.chartThing = Highcharts.chart('assignments-by-category', {
+        Highcharts.setOptions({
+          lang: {
+              thousandsSep: ','
+          }
+        });
+        window.budgetCategoryChart = Highcharts.chart('assignments-by-category', {
           chart: {
             type: 'pie'
           },
+          colors: [
+           '#F2784B','#4A90E2', '#D0021B', '#7ED321', '#50E3C2',
+          '#22A7F0', '#F5A623', '#9013FE', '#BD10E0', '#1BA39C',
+          '#B8E986', '#F8E71C', '#3A539B', '#BD0FE1', '#417505',
+          '#8B572A', '#4A235A', '#F22613', '#D3D3D3', '#C8F7C5'
+        ],
           credits: {
-      enabled: false
+            enabled: false
          },
           title: {
             text: 'Assignments by Categories'
           },
+          tooltip: {
+            valuePrefix: '$'
+          },
           responsive: {
-        rules: [{
-            condition: {
+            rules: [{
+              condition: {
                 maxWidth: 600 // Specify the max width for mobile screens
             },
             chartOptions: {
-                chart: {
-                    height: '500px' // Adjust height as needed for mobile
-                },
-                legend: {
-                    enabled: false,
-                    align: 'center',
-                    verticalAlign: 'bottom',
-                    layout: 'horizontal' // Adjust legend position and layout
-                },
-                plotOptions: {
-                    pie: {
-                        dataLabels: {
-                            enabled: false // Disable data labels on small screens
-                        },
-                        showInLegend: true
-                    }
-                }
+              chart: {
+                  height: '500px' // Adjust height as needed for mobile
+              },
+              legend: {
+                  enabled: false,
+                  align: 'center',
+                  verticalAlign: 'bottom',
+                  layout: 'horizontal' // Adjust legend position and layout
+              },
+              plotOptions: {
+                  pie: {
+                      dataLabels: {
+                          enabled: false // Disable data labels on small screens
+                      },
+                      showInLegend: true,
+                      center: ['50%', '50%']
+                  }
+              }
             }
         }]
           },
@@ -123,6 +162,7 @@
               <% @sub_categories.each_with_index do |category, index| %>
                 {
                   id: '<%= j category.sub_categories[0]["group_name"] %>',
+                  name: '<%= j category.sub_categories[0]["group_name"] %>',
                   data: [
                     <% category.sub_categories.each_with_index do |sub_category, idx| %>
                       ['<%= j sub_category["drilldown"][0] %>', <%= sub_category["drilldown"][1] %>]<%= ',' unless idx == category.sub_categories.length - 1 %>
@@ -135,8 +175,8 @@
         });
 
 
-      console.log(window.chartThing)
-      window.colorMapping = window.chartThing.series[0].data.map((ser) => {return { color: ser.color, name: ser.name };});
+      console.log(window.budgetCategoryChart)
+      window.colorMapping = window.budgetCategoryChart.series[0].data.map((ser) => {return { color: ser.color, name: ser.name };});
       decodeHtml = (html) => {
         var textArea = document.createElement('textarea');
         textArea.innerHTML = html;
