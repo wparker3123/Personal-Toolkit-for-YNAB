@@ -3,8 +3,8 @@ class ReportsController < ApplicationController
     # @categories = BudgetCategory.all
     categories = YnabService.fetch_category_groups()
     BudgetCategory.update_categories(categories)
-    @categories = BudgetCategory.select(:name, :amount)
-    @sub_categories = BudgetCategory.select(:sub_categories)
+    @categories = BudgetCategory.includes(:sub_categories).all
+    @sub_categories = @categories.map(&:sub_categories).flatten.group_by(&:group_name)
 
     @data = [
       { name: 'Vegetables', y: 40 },

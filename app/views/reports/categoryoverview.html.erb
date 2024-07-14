@@ -159,13 +159,13 @@
           }],
           drilldown: {
             series: [
-              <% @sub_categories.each_with_index do |category, index| %>
+              <% @sub_categories.each_with_index do |(group_name, sub_categories), index| %>
                 {
-                  id: '<%= j category.sub_categories[0]["group_name"] %>',
-                  name: '<%= j category.sub_categories[0]["group_name"] %>',
+                  id: '<%= j group_name %>',
+                  name: '<%= j group_name %>',
                   data: [
-                    <% category.sub_categories.each_with_index do |sub_category, idx| %>
-                      ['<%= j sub_category["drilldown"][0] %>', <%= sub_category["drilldown"][1] %>]<%= ',' unless idx == category.sub_categories.length - 1 %>
+                    <% sub_categories.each_with_index do |sub_category, idx| %>
+                      ['<%= j sub_category.name %>', <%= sub_category.budgeted %>]<%= ',' unless idx == sub_categories.length - 1 %>
                     <% end %>
                   ]
                 }<%= ',' unless index == @sub_categories.length - 1 %>
