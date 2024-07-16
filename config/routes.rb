@@ -1,5 +1,5 @@
 Rails.application.routes.draw do
-  get 'reports/categoryoverview'
+  get 'reports/categoryoverview', to: 'reports#category_overview'
   get 'pages/home'
   root 'pages#home'
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
