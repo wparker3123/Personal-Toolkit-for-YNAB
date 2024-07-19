@@ -17,7 +17,9 @@ class ReportsController < ApplicationController
   end
 
   def fetch_prev_category_assignments(month)
-    categories = HistoricalBudgetCategory.includes(:historical_sub_categories).all
+    month_num = Date::MONTHNAMES.index(month)
+
+    categories = HistoricalBudgetCategory.includes(:historical_sub_categories).where("strftime('%m', month) = ?", sprintf('%02d', month_num))
     sub_categories = categories.map(&:historical_sub_categories).flatten.group_by(&:group_name)
 
     {categories: categories, sub_categories: sub_categories}

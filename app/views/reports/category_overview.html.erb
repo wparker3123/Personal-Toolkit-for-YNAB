@@ -79,7 +79,7 @@
   <div class="container">
     <h1>Category Overview</h1>
     <!--<%= pie_chart BudgetCategory.pluck(:name, :amount).to_h, prefix: "$", round: 2, zeros: true %>-->
-    <select name="product[category_id]" id="product_category_id" class="custom-select" onchange="window.testFun()" >
+    <select name="product[category_id]" id="product_category_id" class="custom-select" onchange="window.getPrevMonth(event)" >
       <option value="">Select a Month</option>
       <% @dates.each do |month| %>
         <option value="<%= month %>"><%= month %></option>
@@ -197,11 +197,14 @@
       });
     </script>
     <script>
-      window.testFn = function(event){
-          <% data = fetch_prev_category_assignments('July') %>
+      window.getPrevMonth = function(event){
+          console.log("Event Details");
+          console.log(event);
+          var month = event.target.value;
+          <% data = fetch_prev_category_assignments('May') %>
           <% new_categories = data[:categories] %>
           <% new_sub_categories = data[:sub_categories]%>
-          console.log("no errors ig")
+          console.log("no errors ig");
           var newData = [
               <% new_categories.each_with_index do |category, index| %>
                 {
