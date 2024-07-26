@@ -2,6 +2,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <%= javascript_include_tag "application", :async => !Rails.env.development?, "turbolinks-data-track" => true %>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+
   <title>Category Overview</title>
   <style>
     body {
@@ -11,8 +16,6 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        # height: 100vh;
-        # height: 250vh;
         height: auto;
         background-color: #f4f4f9;
         color: #333;
@@ -63,6 +66,17 @@
       box-shadow: 0 0 0 2px rgba(0,123,255,.25); /* Subtle focus shadow */
     }
 
+    .decorated-total {
+        font-weight: bold; /* optional, depending on your needs */
+        font-size: 1.1em; /* Increase font size */
+        background-size: 50%; /* Adjust background size */
+        width: fit-content;
+    }
+
+    .budget-totals-tbl {
+        text-align: center;
+        font-size: 1.3em
+    }
 
     @media screen and (max-width: 600px) {
         h1 {
@@ -79,7 +93,7 @@
   <div class="container">
     <h1>Category Overview</h1>
     <!--<%= pie_chart BudgetCategory.pluck(:name, :amount).to_h, prefix: "$", round: 2, zeros: true %>-->
-    <select name="product[category_id]" id="product_category_id" class="custom-select" onchange="window.getPrevMonth(event)" >
+    <select name="product[category_id]" id="product_category_id" class="custom-select" onchange="getPrevMonth(event)" >
       <option value="">Select a Month</option>
       <% @dates.each do |month| %>
         <option value="<%= month %>"><%= month %></option>
@@ -87,13 +101,119 @@
     </select>
     <div id="assignments-by-category"></div>
     <script type="text/javascript">
+        decodeHtml = (html) => {
+            var textArea = document.createElement('textarea');
+            textArea.innerHTML = html;
+            var decodedText = textArea.value;
+            textArea.remove();
+            return decodedText;
+        }
+        resetColorMapping = () => {
+            colorMapping = budgetCategoryChart.series[0].data.sort((a, b) => b.y - a.y).map((ser) => {
+                return { color: ser.color, name: ser.name };
+            });
+        }
+        getColor = (categoryName) => {
+            var nameList = colorMapping.map((obj) => {return decodeHtml(obj.name)})
+            if (nameList.find(name => name === categoryName)) {
+                var i = nameList.indexOf(categoryName);
+                return colorMapping.map((obj) => {return obj.color})[i]
+            }
+        };
+        setCategoryIconColors = () => {
+            <% @categories.each do |category| %>
+            var name = '<%== j category.name %>';
+            var elem = document.getElementById(name);
+            elem.style.color = getColor(name);
+            <% end %>
+        }
+
+        applyColors = (categories) => {
+            resetColorMapping();
+            categories.forEach(category => {
+                var elem = document.getElementById(category.name);
+                if (elem) {
+                    elem.style.color = getColor(category.name);
+                }
+            });
+        }
+
+        generateGradient = (colors) => {
+            let gradient = "linear-gradient(to right, ";
+            colors.forEach((item, index) => {
+                gradient += `${item.color} ${index / (colors.length - 1) * 100}%, `;
+            });
+            gradient = gradient.slice(0, -2) + ")";
+            return gradient;
+        }
+
+        updateTotalDecoration = () => {
+            const totalElement = document.querySelector('.decorated-total');
+            const gradient = generateGradient(colorMapping);
+            totalElement.style.background = gradient;
+
+            totalElement.style.background = gradient;
+            totalElement.style.webkitBackgroundClip = 'text';
+            totalElement.style.color = 'transparent';
+            totalElement.style.display = 'inline-block';
+            totalElement.style.backgroundSize = '100% 100%';
+            totalElement.style.backgroundClip = 'text'; // For non-webkit browsers
+        }
+
+        updateTotalValue = (categories = []) => {
+            let sum = 0;
+            if (!categories.length){
+                sum = '<%= j number_to_currency(@categories.sum { |a| a.amount}.to_f) %>';
+                document.querySelector('.total-value').innerHTML = sum;
+
+                var categoryTotal;
+                <% @categories.each do |category| %>
+                  categoryTotal = document.getElementById('<%= j category.name %>-total');
+                  console.log('<%= j category.name %>-total');
+                <% end %>
+                return;
+            }
+
+            categories.forEach((category) => {
+                sum += category.y; // sum budgeted amount
+            })
+
+            document.querySelector('.total-value').innerHTML = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(sum);
+        }
+        function sortAndRedrawChart(chart) {
+            const series = chart.series[0];
+            series.setData(series.data.sort((a, b) => b.y - a.y).map(point => ({
+                name: point.name,
+                y: point.y,
+                color: point.color
+            })));
+            chart.redraw();
+        }
+
+        toastr.options = {
+            "closeButton": true,
+            "debug": false,
+            "newestOnTop": true,
+            "progressBar": true,
+            "positionClass": "toast-top-center",
+            "preventDuplicates": true,
+            "onclick": null,
+            "showDuration": "300",
+            "hideDuration": "1000",
+            "timeOut": "5000",
+            "extendedTimeOut": "1000",
+            "showEasing": "swing",
+            "hideEasing": "linear",
+            "showMethod": "fadeIn",
+            "hideMethod": "fadeOut"
+        };
       document.addEventListener('DOMContentLoaded', function() {
         Highcharts.setOptions({
           lang: {
               thousandsSep: ','
           }
         });
-        window.budgetCategoryChart = Highcharts.chart('assignments-by-category', {
+        budgetCategoryChart = Highcharts.chart('assignments-by-category', {
           chart: {
             type: 'pie'
           },
@@ -158,7 +278,7 @@
                   id: '<%= j group_name %>',
                   name: '<%= j group_name %>',
                   data: [
-                    <% sub_categories.each_with_index do |sub_category, idx| %>
+                    <% sub_categories.sort_by { |a| -a.budgeted}.each_with_index do |sub_category, idx| %>
                       ['<%= j sub_category.name %>', <%= sub_category.budgeted %>]<%= ',' unless idx == sub_categories.length - 1 %>
                     <% end %>
                   ]
@@ -168,81 +288,131 @@
           }
         });
 
-
-      console.log(window.budgetCategoryChart)
-      window.colorMapping = window.budgetCategoryChart.series[0].data.map((ser) => {return { color: ser.color, name: ser.name };});
-      decodeHtml = (html) => {
-        var textArea = document.createElement('textarea');
-        textArea.innerHTML = html;
-        var decodedText = textArea.value;
-        textArea.remove();
-        return decodedText;
-      }
-      window.testFun = () => {
-        console.log("this works from here");
-      }
-      window.getColor = (categoryName) => {
-        var nameList = window.colorMapping.map((obj) => {return decodeHtml(obj.name)})
-        if (nameList.find(name => name === categoryName)) {
-            var i = nameList.indexOf(categoryName);
-            return colorMapping.map((obj) => {return obj.color})[i]
-        }
-      };
-      <% @categories.each do |category| %>
-          var name = '<%== j category.name %>';
-          console.log(name);
-          var elem = document.getElementById(name);
-          elem.style.color = window.getColor(name);
-      <% end %>
+      resetColorMapping();
+      setCategoryIconColors();
+      updateTotalDecoration();
       });
     </script>
+
     <script>
-      window.getPrevMonth = function(event){
-          console.log("Event Details");
-          console.log(event);
+      testAjax = function (month){
+          const csrfToken = $('meta[name="csrf-token"]').attr('content');
+          $.ajax({
+              url: "fetch_prev_category_assignments",
+              type: 'GET',
+              dataType: 'json',
+              data: {
+                  month: month
+              },
+              headers: {
+                  'X-CSRF-Token': csrfToken
+              },
+              success: function(data) {
+                  console.log('Categories retrieved successfully:', data);
+                  budgetCategoryChart.series[0].setData(data.categories.sort((a, b) => b.y - a.y));
+                  data.sub_categories.forEach(category => {
+                      category.data.sort((a, b) => b[1] - a[1]);
+                  });
+                  budgetCategoryChart.options.drilldown.series = data.sub_categories;
+
+                  const tableBody = document.getElementById('budget-totals-body');
+
+                  tableBody.innerHTML = '';
+                  const totalRow = document.createElement('tr');
+                  const totalColumn = document.createElement('td');
+                  totalColumn.innerHTML = '🥁';
+                  const gradientTotal = document.createElement('span');
+
+                  gradientTotal.className = 'decorated-total'
+                  gradientTotal.innerHTML = 'Total';
+
+                  totalColumn.appendChild(gradientTotal)
+                  const totalValueColumn = document.createElement('td');
+                  totalValueColumn.className = 'total-value';
+
+                  tableBody.appendChild(totalRow);
+                  tableBody.appendChild(totalColumn);
+                  tableBody.appendChild(totalValueColumn);
+
+                  data.categories.sort((a, b) => b.y - a.y).forEach(category => {
+                      const row = document.createElement('tr');
+
+                      const nameCell = document.createElement('td');
+                      nameCell.id = category.name;
+                      nameCell.innerHTML = `<i class="fas fa-circle"></i> ${category.name}`;
+
+                      const amountCell = document.createElement('td');
+                      amountCell.textContent = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(category.y);
+
+                      row.appendChild(nameCell);
+                      row.appendChild(amountCell);
+
+                      tableBody.appendChild(row);
+                  });
+                  applyColors(data.categories);
+                  updateTotalDecoration(data.categories);
+                  updateTotalValue(data.categories);
+              },
+              error: function(data) {
+                  if (data.status === 404){
+                      toastr.error(data.responseJSON.error);
+                  }
+              }
+          });
+      }
+      getPrevMonth = function(event){
           var month = event.target.value;
-          <% data = fetch_prev_category_assignments('May') %>
-          <% new_categories = data[:categories] %>
-          <% new_sub_categories = data[:sub_categories]%>
-          console.log("no errors ig");
-          var newData = [
-              <% new_categories.each_with_index do |category, index| %>
-                {
-                  name: '<%= j category.name %>',
-                  y: <%= category.amount %>,
-                  drilldown: '<%= j category.name %>'
-                }<%= ',' unless index == @categories.length - 1 %>
-              <% end %>
-            ]
-          window.budgetCategoryChart.series[0].setData(newData);
-          window.budgetCategoryChart.options.drilldown.series = [
-                <% new_sub_categories.each_with_index do |(group_name, sub_categories), index| %>
+
+          if (month.includes("Current")){
+              budgetCategoryChart.series[0].setData([
+                  <% @categories.each_with_index do |category, index| %>
                   {
-                    id: '<%= j group_name %>',
-                    name: '<%= j group_name %>',
-                    data: [
-                      <% sub_categories.each_with_index do |sub_category, idx| %>
-                        ['<%= j sub_category.name %>', <%= sub_category.budgeted %>]<%= ',' unless idx == sub_categories.length - 1 %>
-                      <% end %>
-                    ]
-                  }<%= ',' unless index == new_sub_categories.length - 1 %>
-                <% end %>
+                      name: '<%= j category.name %>',
+                      y: <%= category.amount %>,
+                      drilldown: '<%= j category.name %>'
+                  }<%= ',' unless index == @categories.length - 1 %>
+                  <% end %>
+              ]);
+              budgetCategoryChart.options.drilldown.series = [
+                  <% @sub_categories.each_with_index do |(group_name, sub_categories), index| %>
+                  {
+                      id: '<%= j group_name %>',
+                      name: '<%= j group_name %>',
+                      data: [
+                          <% sub_categories.each_with_index do |sub_category, idx| %>
+                          ['<%= j sub_category.name %>', <%= sub_category.budgeted %>]<%= ',' unless idx == sub_categories.length - 1 %>
+                          <% end %>
+                      ]
+                  }<%= ',' unless index == @sub_categories.length - 1 %>
+                  <% end %>
               ]
+              resetColorMapping();
+              setCategoryIconColors();
+              updateTotalDecoration();
+              updateTotalValue()
+          } else{
+              testAjax(month);
+          }
+
       }
     </script>
-    <div style="text-align: center;">
-      <table>
+    <div>
+      <table class="budget-totals-tbl" >
         <thead>
           <tr>
             <th>Category Name</th>
             <th>Assigned Amount</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody id="budget-totals-body">
+          <tr>
+            <td >🥁<span class="decorated-total">Total</span></td>
+            <td class='total-value'><%= number_to_currency(@categories.sum { |a| a.amount}.to_f) %></td>
+          </tr>
           <% @categories.each do |category| %>
             <tr>
               <td id='<%= j category.name %>'> <%= icon('fas', 'circle')%> <%= category.name %></td>
-              <td><%= number_to_currency(category.amount) %></td>
+              <td id='<%= j category.name %>-total'><%= number_to_currency(category.amount) %></td>
             </tr>
           <% end %>
         </tbody>
