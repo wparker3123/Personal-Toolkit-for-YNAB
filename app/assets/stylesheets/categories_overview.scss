@@ -12,10 +12,9 @@ body {
 
 .container {
   text-align: center;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
   padding: 20px;
   border-radius: 8px;
-  background: white;
   max-width: 600px;
   width: 100%;
   box-sizing: border-box;
@@ -41,17 +40,29 @@ table {
   border: 1px solid #ccc;
   border-radius: 4px;
   appearance: none;
-  background-color: white;
   background-image: icon('fas', 'circle');
   background-repeat: no-repeat;
   background-position: right 10px center;
   background-size: 12px;
 }
 
+/* Styles for the select dropdown when it is focused */
 .custom-select:focus {
   border-color: #007bff;
   outline: none;
-  box-shadow: 0 0 0 2px rgba(0, 123, 255, .25);
+  box-shadow: 0 0 0 2px rgba(0,123,255,.25);
+}
+
+.decorated-total {
+  font-weight: bold;
+  font-size: 1.1em;
+  background-size: 50%;
+  width: fit-content;
+}
+
+.budget-totals-tbl {
+  text-align: center;
+  font-size: 1.3em
 }
 
 @media screen and (max-width: 600px) {
@@ -61,5 +72,26 @@ table {
 
   p {
     font-size: 14px;
+  }
+}
+@media (prefers-color-scheme: dark) {
+  h1,
+  p,
+  div{
+    color: white;
+  }
+
+  div,
+  option {
+    background: #303030;
+  }
+
+  body {
+    background: #0e0e12
+  }
+
+  select{
+    background: none;
+    color: white;
   }
 }
