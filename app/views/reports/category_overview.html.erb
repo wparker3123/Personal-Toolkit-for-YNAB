@@ -3,91 +3,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <%= javascript_include_tag "application", :async => !Rails.env.development?, "turbolinks-data-track" => true %>
+  <%= javascript_include_tag("category_overview_helper")%>
+  <%= stylesheet_link_tag "categories_overview", "data-turbo-track": "reload" %>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 
   <title>Category Overview</title>
-  <style>
-    body {
-        font-family: 'Arial', sans-serif;
-        margin: 0;
-        padding: 0;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: auto;
-        background-color: #f4f4f9;
-        color: #333;
-    }
-
-    .container {
-        text-align: center;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        padding: 20px;
-        border-radius: 8px;
-        background: white;
-        max-width: 600px;
-        width: 100%;
-        box-sizing: border-box;
-    }
-
-    h1 {
-        font-size: 24px;
-        color: #5a5a5a;
-    }
-
-    p {
-        font-size: 16px;
-        color: #666;
-    }
-
-    table {
-      margin: 0 auto;
-    }
-
-    .custom-select {
-      width: 80%;
-      padding: 8px 16px; /* Padding inside the dropdown */
-      border: 1px solid #ccc; /* Light grey border */
-      border-radius: 4px; /* Rounded corners */
-      appearance: none; /* Removes default styling */
-      background-color: white;
-      background-image: icon('fas', 'circle');
-      background-repeat: no-repeat;
-      background-position: right 10px center; /* Position the arrow icon */
-      background-size: 12px; /* Size of the arrow icon */
-    }
-
-    /* Styles for the select dropdown when it is focused */
-    .custom-select:focus {
-      border-color: #007bff; /* Blue border on focus */
-      outline: none; /* Remove default focus outline */
-      box-shadow: 0 0 0 2px rgba(0,123,255,.25); /* Subtle focus shadow */
-    }
-
-    .decorated-total {
-        font-weight: bold; /* optional, depending on your needs */
-        font-size: 1.1em; /* Increase font size */
-        background-size: 50%; /* Adjust background size */
-        width: fit-content;
-    }
-
-    .budget-totals-tbl {
-        text-align: center;
-        font-size: 1.3em
-    }
-
-    @media screen and (max-width: 600px) {
-        h1 {
-            font-size: 20px;
-        }
-
-        p {
-            font-size: 14px;
-        }
-    }
-  </style>
 </head>
 <body>
   <div class="container">
@@ -101,63 +23,12 @@
     </select>
     <div id="assignments-by-category"></div>
     <script type="text/javascript">
-        decodeHtml = (html) => {
-            var textArea = document.createElement('textarea');
-            textArea.innerHTML = html;
-            var decodedText = textArea.value;
-            textArea.remove();
-            return decodedText;
-        }
-        resetColorMapping = () => {
-            colorMapping = budgetCategoryChart.series[0].data.sort((a, b) => b.y - a.y).map((ser) => {
-                return { color: ser.color, name: ser.name };
-            });
-        }
-        getColor = (categoryName) => {
-            var nameList = colorMapping.map((obj) => {return decodeHtml(obj.name)})
-            if (nameList.find(name => name === categoryName)) {
-                var i = nameList.indexOf(categoryName);
-                return colorMapping.map((obj) => {return obj.color})[i]
-            }
-        };
         setCategoryIconColors = () => {
             <% @categories.each do |category| %>
             var name = '<%== j category.name %>';
             var elem = document.getElementById(name);
             elem.style.color = getColor(name);
             <% end %>
-        }
-
-        applyColors = (categories) => {
-            resetColorMapping();
-            categories.forEach(category => {
-                var elem = document.getElementById(category.name);
-                if (elem) {
-                    elem.style.color = getColor(category.name);
-                }
-            });
-        }
-
-        generateGradient = (colors) => {
-            let gradient = "linear-gradient(to right, ";
-            colors.forEach((item, index) => {
-                gradient += `${item.color} ${index / (colors.length - 1) * 100}%, `;
-            });
-            gradient = gradient.slice(0, -2) + ")";
-            return gradient;
-        }
-
-        updateTotalDecoration = () => {
-            const totalElement = document.querySelector('.decorated-total');
-            const gradient = generateGradient(colorMapping);
-            totalElement.style.background = gradient;
-
-            totalElement.style.background = gradient;
-            totalElement.style.webkitBackgroundClip = 'text';
-            totalElement.style.color = 'transparent';
-            totalElement.style.display = 'inline-block';
-            totalElement.style.backgroundSize = '100% 100%';
-            totalElement.style.backgroundClip = 'text'; // For non-webkit browsers
         }
 
         updateTotalValue = (categories = []) => {
@@ -179,15 +50,6 @@
             })
 
             document.querySelector('.total-value').innerHTML = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(sum);
-        }
-        function sortAndRedrawChart(chart) {
-            const series = chart.series[0];
-            series.setData(series.data.sort((a, b) => b.y - a.y).map(point => ({
-                name: point.name,
-                y: point.y,
-                color: point.color
-            })));
-            chart.redraw();
         }
 
         toastr.options = {
@@ -239,7 +101,8 @@
             },
             chartOptions: {
               chart: {
-                  height: '500px' // Adjust height as needed for mobile
+                  height: '500px', // Adjust height as needed for mobile
+                  backgroundColor: theme
               },
               legend: {
                   enabled: false,
@@ -260,16 +123,17 @@
         }]
           },
           series: [{
-            name: 'Categories',
-            data: [
-              <% @categories.each_with_index do |category, index| %>
-                {
-                  name: '<%= j category.name %>',
-                  y: <%= category.amount %>,
-                  drilldown: '<%= j category.name %>'
-                }<%= ',' unless index == @categories.length - 1 %>
-              <% end %>
-            ]
+              name: 'Categories',
+              borderColor: theme,
+              data: [
+                  <% @categories.each_with_index do |category, index| %>
+                  {
+                    name: '<%= j category.name %>',
+                    y: <%= category.amount %>,
+                    drilldown: '<%= j category.name %>'
+                  }<%= ',' unless index == @categories.length - 1 %>
+                <% end %>
+              ]
           }],
           drilldown: {
             series: [

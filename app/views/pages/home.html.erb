@@ -22,7 +22,6 @@
           box-shadow: 0 4px 8px rgba(0,0,0,0.1);
           padding: 30px;
           border-radius: 12px;
-          background: white;
           max-width: 600px;
           width: 90%;
           box-sizing: border-box;
@@ -64,7 +63,20 @@
       .btn-secondary:hover {
           background-color: #4a4e69;
       }
+      @media (prefers-color-scheme: dark) {
+          h1,
+          p {
+              color: white;
+          }
 
+          div {
+              background: #303030;
+          }
+
+          body {
+              background: #0e0e12
+          }
+      }
       @media (max-width: 600px) {
           h1 {
               font-size: 24px;
@@ -85,9 +97,9 @@
     <div class="container">
       <h1>Welcome to YNAB Mobile Insights!</h1>
       <p>Explore detailed reports on-the-go</p>
-      <%= link_to 'Assignments by Categories', 'reports/category_overview', class: 'btn' %>
-      <%= link_to 'Another Report', '#', class: 'btn btn-secondary' %> <!-- Placeholder for another button -->
-      <%= link_to 'More Options', '#', class: 'btn btn-secondary' %> <!-- Placeholder for another button -->
+      <%= link_to 'Category Assignment Overview', 'reports/category_overview', class: 'btn' %>
+      <%= link_to 'Spending Overview', '#', class: 'btn btn-secondary' %>
+      <%= link_to 'Tools', '#', class: 'btn btn-secondary' %>
     </div>
   </body>
 </html>

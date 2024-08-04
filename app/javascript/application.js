@@ -7,8 +7,6 @@ import Highcharts from "highcharts";
 import HC_drilldown from 'highcharts/modules/drilldown';
 import "jquery"
 
-console.log("within app.js")
-console.log($);
 HC_drilldown(Highcharts);
 window.Highcharts = Highcharts;
 
