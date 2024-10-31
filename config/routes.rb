@@ -1,6 +1,7 @@
 Rails.application.routes.draw do
-  get 'reports/categoryoverview'
-  get 'pages/home'
+  get 'reports/category_overview', to: 'reports#category_overview'
+  get 'reports/fetch_prev_category_assignments', to: 'reports#fetch_prev_category_assignments'
+  get 'home', to: 'pages#home', as: 'home'
   root 'pages#home'
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 

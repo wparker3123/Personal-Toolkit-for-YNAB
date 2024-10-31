@@ -1,0 +1,290 @@
+<!-- app/views/categories/index.html.erb -->
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <%= javascript_include_tag "application", :async => !Rails.env.development?, "turbolinks-data-track" => true %>
+  <%= javascript_include_tag("category_overview_helper")%>
+  <%= stylesheet_link_tag "categories_overview", "data-turbo-track": "reload" %>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+
+  <title>Category Overview</title>
+</head>
+<body>
+  <div class="container">
+    <h1>Category Overview</h1>
+    <!--<%= pie_chart BudgetCategory.pluck(:name, :amount).to_h, prefix: "$", round: 2, zeros: true %>-->
+    <select name="product[category_id]" id="product_category_id" class="custom-select" onchange="getPrevMonth(event)" >
+      <option value="">Select a Month</option>
+      <% @dates.each do |month| %>
+        <option value="<%= month %>"><%= month %></option>
+      <% end %>
+    </select>
+    <div id="assignments-by-category"></div>
+    <script type="text/javascript">
+        setCategoryIconColors = () => {
+            <% @categories.each do |category| %>
+            var name = '<%== j category.name %>';
+            var elem = document.getElementById(name);
+            elem.style.color = getColor(name);
+            <% end %>
+        }
+
+        updateTotalValue = (categories = []) => {
+            let sum = 0;
+            if (!categories.length){
+                sum = '<%= j number_to_currency(@categories.sum { |a| a.amount}.to_f) %>';
+                document.querySelector('.total-value').innerHTML = sum;
+
+                var categoryTotal;
+                <% @categories.each do |category| %>
+                  categoryTotal = document.getElementById('<%= j category.name %>-total');
+                  console.log('<%= j category.name %>-total');
+                <% end %>
+                return;
+            }
+
+            categories.forEach((category) => {
+                sum += category.y; // sum budgeted amount
+            })
+
+            document.querySelector('.total-value').innerHTML = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(sum);
+        }
+
+        toastr.options = {
+            "closeButton": true,
+            "debug": false,
+            "newestOnTop": true,
+            "progressBar": true,
+            "positionClass": "toast-top-center",
+            "preventDuplicates": true,
+            "onclick": null,
+            "showDuration": "300",
+            "hideDuration": "1000",
+            "timeOut": "5000",
+            "extendedTimeOut": "1000",
+            "showEasing": "swing",
+            "hideEasing": "linear",
+            "showMethod": "fadeIn",
+            "hideMethod": "fadeOut"
+        };
+      document.addEventListener('DOMContentLoaded', function() {
+        Highcharts.setOptions({
+          lang: {
+              thousandsSep: ','
+          }
+        });
+        budgetCategoryChart = Highcharts.chart('assignments-by-category', {
+          chart: {
+            type: 'pie'
+          },
+          colors: [
+           '#F2784B','#4A90E2', '#D0021B', '#7ED321', '#50E3C2',
+          '#22A7F0', '#F5A623', '#9013FE', '#BD10E0', '#1BA39C',
+          '#B8E986', '#F8E71C', '#3A539B', '#BD0FE1', '#417505',
+          '#8B572A', '#4A235A', '#F22613', '#D3D3D3', '#C8F7C5'
+        ],
+          credits: {
+            enabled: false
+         },
+          title: {
+              text: 'Assignments by Categories',
+              style: {
+                  color: 'white',
+                  fontWeight: 'bold'
+              }
+          },
+          tooltip: {
+            valuePrefix: '$'
+          },
+          responsive: {
+            rules: [{
+              condition: {
+                maxWidth: 600 // Specify the max width for mobile screens
+            },
+            chartOptions: {
+              chart: {
+                  height: '500px', // Adjust height as needed for mobile
+                  backgroundColor: theme
+              },
+              legend: {
+                  enabled: false,
+                  align: 'center',
+                  verticalAlign: 'bottom',
+                  layout: 'horizontal' // Adjust legend position and layout
+              },
+              plotOptions: {
+                  pie: {
+                      dataLabels: {
+                          enabled: false // Disable data labels on small screens
+                      },
+                      showInLegend: true,
+                      center: ['50%', '50%']
+                  }
+              }
+            }
+        }]
+          },
+          series: [{
+              name: 'Categories',
+              borderColor: theme,
+              data: [
+                  <% @categories.each_with_index do |category, index| %>
+                  {
+                    name: '<%= j category.name %>',
+                    y: <%= category.amount %>,
+                    drilldown: '<%= j category.name %>'
+                  }<%= ',' unless index == @categories.length - 1 %>
+                <% end %>
+              ]
+          }],
+          drilldown: {
+            series: [
+              <% @sub_categories.each_with_index do |(group_name, sub_categories), index| %>
+                {
+                  id: '<%= j group_name %>',
+                  name: '<%= j group_name %>',
+                  data: [
+                    <% sub_categories.sort_by { |a| -a.budgeted}.each_with_index do |sub_category, idx| %>
+                      ['<%= j sub_category.name %>', <%= sub_category.budgeted %>]<%= ',' unless idx == sub_categories.length - 1 %>
+                    <% end %>
+                  ]
+                }<%= ',' unless index == @sub_categories.length - 1 %>
+              <% end %>
+            ]
+          }
+        });
+
+      resetColorMapping();
+      setCategoryIconColors();
+      updateTotalDecoration();
+      });
+    </script>
+
+    <script>
+      testAjax = function (month){
+          const csrfToken = $('meta[name="csrf-token"]').attr('content');
+          $.ajax({
+              url: "fetch_prev_category_assignments",
+              type: 'GET',
+              dataType: 'json',
+              data: {
+                  month: month
+              },
+              headers: {
+                  'X-CSRF-Token': csrfToken
+              },
+              success: function(data) {
+                  console.log('Categories retrieved successfully:', data);
+                  budgetCategoryChart.series[0].setData(data.categories.sort((a, b) => b.y - a.y));
+                  data.sub_categories.forEach(category => {
+                      category.data.sort((a, b) => b[1] - a[1]);
+                  });
+                  budgetCategoryChart.options.drilldown.series = data.sub_categories;
+
+                  const tableBody = document.getElementById('budget-totals-body');
+
+                  tableBody.innerHTML = '';
+                  const totalRow = document.createElement('tr');
+                  const totalColumn = document.createElement('td');
+                  totalColumn.innerHTML = '🥁';
+                  const gradientTotal = document.createElement('span');
+
+                  gradientTotal.className = 'decorated-total'
+                  gradientTotal.innerHTML = 'Total';
+
+                  totalColumn.appendChild(gradientTotal)
+                  const totalValueColumn = document.createElement('td');
+                  totalValueColumn.className = 'total-value';
+
+                  tableBody.appendChild(totalRow);
+                  tableBody.appendChild(totalColumn);
+                  tableBody.appendChild(totalValueColumn);
+
+                  data.categories.sort((a, b) => b.y - a.y).forEach(category => {
+                      const row = document.createElement('tr');
+
+                      const nameCell = document.createElement('td');
+                      nameCell.id = category.name;
+                      nameCell.innerHTML = `<i class="fas fa-circle"></i> ${category.name}`;
+
+                      const amountCell = document.createElement('td');
+                      amountCell.textContent = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(category.y);
+
+                      row.appendChild(nameCell);
+                      row.appendChild(amountCell);
+
+                      tableBody.appendChild(row);
+                  });
+                  applyColors(data.categories);
+                  updateTotalDecoration(data.categories);
+                  updateTotalValue(data.categories);
+              },
+              error: function(data) {
+                  if (data.status === 404){
+                      toastr.error(data.responseJSON.error);
+                  }
+              }
+          });
+      }
+      getPrevMonth = function(event){
+          var month = event.target.value;
+
+          if (month.includes("Current")){
+              budgetCategoryChart.series[0].setData([
+                  <% @categories.each_with_index do |category, index| %>
+                  {
+                      name: '<%= j category.name %>',
+                      y: <%= category.amount %>,
+                      drilldown: '<%= j category.name %>'
+                  }<%= ',' unless index == @categories.length - 1 %>
+                  <% end %>
+              ]);
+              budgetCategoryChart.options.drilldown.series = [
+                  <% @sub_categories.each_with_index do |(group_name, sub_categories), index| %>
+                  {
+                      id: '<%= j group_name %>',
+                      name: '<%= j group_name %>',
+                      data: [
+                          <% sub_categories.each_with_index do |sub_category, idx| %>
+                          ['<%= j sub_category.name %>', <%= sub_category.budgeted %>]<%= ',' unless idx == sub_categories.length - 1 %>
+                          <% end %>
+                      ]
+                  }<%= ',' unless index == @sub_categories.length - 1 %>
+                  <% end %>
+              ]
+              resetColorMapping();
+              setCategoryIconColors();
+              updateTotalDecoration();
+              updateTotalValue()
+          } else{
+              testAjax(month);
+          }
+
+      }
+    </script>
+    <div>
+      <table class="budget-totals-tbl" >
+        <thead>
+          <tr>
+            <th>Category Name</th>
+            <th>Assigned Amount</th>
+          </tr>
+        </thead>
+        <tbody id="budget-totals-body">
+          <tr>
+            <td >🥁<span class="decorated-total">Total</span></td>
+            <td class='total-value'><%= number_to_currency(@categories.sum { |a| a.amount}.to_f) %></td>
+          </tr>
+          <% @categories.each do |category| %>
+            <tr>
+              <td id='<%= j category.name %>'> <%= icon('fas', 'circle')%> <%= category.name %></td>
+              <td id='<%= j category.name %>-total'><%= number_to_currency(category.amount) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</body>

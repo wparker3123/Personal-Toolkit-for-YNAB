@@ -25,7 +25,7 @@ class YnabService
 
         response = get("/budgets/#{BUDGET_ID}/months/#{month}", options)
         if response.success?
-          process_budget_response(response)
+          process_budget_response(response, month)
         elsif
           if response.message == 'Not Found' or response.code == 404
             puts "month not found"
@@ -36,13 +36,11 @@ class YnabService
         end;
     end;
     private
-    def self.process_budget_response(response)
+    def self.process_budget_response(response, response_month)
       raw_categories_data = response.parsed_response['data']['month']['categories']
       grouped_categories = raw_categories_data.group_by { |category| category["category_group_name"]}
       sum = 0
-      group_summaries = grouped_categories.each_pair do |key, obj|
-        key != 'Internal Master Category'
-      end.map do |category_pair|
+      group_summaries = grouped_categories.reject { |key, _obj| key == 'Internal Master Category' }.map do |category_pair|
         puts "here is test: "
         puts category_pair[0]
         budgeted_sum = category_pair[1].sum { |category| category['budgeted'] / 1000.0 }
@@ -50,13 +48,15 @@ class YnabService
           {
             group_name: category["category_group_name"],
             name: category["name"], 
-            budgeted: category["budgeted"] / 1000.0
+            budgeted: category["budgeted"] / 1000.0,
+            month: Date.parse(response_month)
           }
         end;
         { 
             name: category_pair[0],
             total_budgeted: budgeted_sum,
-            categories: internal_categories
+            categories: internal_categories,
+            month: Date.parse(response_month)
           }
         end.flatten;
         group_summaries

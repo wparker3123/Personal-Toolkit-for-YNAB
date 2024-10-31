@@ -1,0 +1,66 @@
+theme = "#303030"
+decodeHtml = (html) => {
+    var textArea = document.createElement('textarea');
+    textArea.innerHTML = html;
+    var decodedText = textArea.value;
+    textArea.remove();
+    return decodedText;
+}
+resetColorMapping = () => {
+    colorMapping = budgetCategoryChart.series[0].data.sort((a, b) => b.y - a.y).map((ser) => {
+        return { color: ser.color, name: ser.name };
+    });
+}
+getColor = (categoryName) => {
+    var nameList = colorMapping.map((obj) => {return decodeHtml(obj.name)})
+    if (nameList.find(name => name === categoryName)) {
+        var i = nameList.indexOf(categoryName);
+        return colorMapping.map((obj) => {return obj.color})[i]
+    }
+};
+
+applyColors = (categories) => {
+    resetColorMapping();
+    categories.forEach(category => {
+        var elem = document.getElementById(category.name);
+        if (elem) {
+            elem.style.color = getColor(category.name);
+        }
+    });
+}
+
+generateGradient = (colors) => {
+    let gradient = "linear-gradient(to right, ";
+    colors.forEach((item, index) => {
+        gradient += `${item.color} ${index / (colors.length - 1) * 100}%, `;
+    });
+    gradient = gradient.slice(0, -2) + ")";
+    return gradient;
+}
+
+updateTotalDecoration = () => {
+    const totalElement = document.querySelector('.decorated-total');
+    const gradient = generateGradient(colorMapping);
+
+    totalElement.style.background = gradient;
+    totalElement.style.webkitBackgroundClip = 'text';
+    totalElement.style.color = 'transparent';
+    totalElement.style.display = 'inline-block';
+    totalElement.style.backgroundSize = '100% 100%';
+    totalElement.style.backgroundClip = 'text'; // For non-webkit browsers
+}
+
+sortAndRedrawChart = (chart) => {
+    const series = chart.series[0];
+    series.setData(series.data.sort((a, b) => b.y - a.y).map(point => ({
+        name: point.name,
+        y: point.y,
+        color: point.color
+    })));
+    chart.redraw();
+}
+
+update = () => {
+    updateTotalDecoration();
+    resetColorMapping();
+}

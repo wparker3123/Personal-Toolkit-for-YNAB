@@ -1,0 +1,97 @@
+body {
+  font-family: 'Arial', sans-serif;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: auto;
+  background-color: #f4f4f9;
+  color: #333;
+}
+
+.container {
+  text-align: center;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  padding: 20px;
+  border-radius: 8px;
+  max-width: 600px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+h1 {
+  font-size: 24px;
+  color: #5a5a5a;
+}
+
+p {
+  font-size: 16px;
+  color: #666;
+}
+
+table {
+  margin: 0 auto;
+}
+
+.custom-select {
+  width: 80%;
+  padding: 8px 16px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  appearance: none;
+  background-image: icon('fas', 'circle');
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 12px;
+}
+
+/* Styles for the select dropdown when it is focused */
+.custom-select:focus {
+  border-color: #007bff;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(0,123,255,.25);
+}
+
+.decorated-total {
+  font-weight: bold;
+  font-size: 1.1em;
+  background-size: 50%;
+  width: fit-content;
+}
+
+.budget-totals-tbl {
+  text-align: center;
+  font-size: 1.3em
+}
+
+@media screen and (max-width: 600px) {
+  h1 {
+    font-size: 20px;
+  }
+
+  p {
+    font-size: 14px;
+  }
+}
+@media (prefers-color-scheme: dark) {
+  h1,
+  p,
+  div{
+    color: white;
+  }
+
+  div,
+  option {
+    background: #303030;
+  }
+
+  body {
+    background: #0e0e12
+  }
+
+  select{
+    background: none;
+    color: white;
+  }
+}

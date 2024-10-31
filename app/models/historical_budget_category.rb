@@ -1,16 +1,15 @@
-class BudgetCategory < ApplicationRecord
-    has_many :sub_categories, dependent: :destroy
+class HistoricalBudgetCategory < ApplicationRecord
+    has_many :historical_sub_categories, dependent: :destroy
     def self.update_categories(categories)
         ActiveRecord::Base.transaction do
-            SubCategory.delete_all
-            BudgetCategory.delete_all
             categories.each do |category|
-                budget_category = BudgetCategory.create(name: category[:name], amount: category[:total_budgeted])
+                budget_category = HistoricalBudgetCategory.create(name: category[:name], amount: category[:total_budgeted], month: category[:month])
                 category[:categories].each do |sub_category|
-                    budget_category.sub_categories.create(
+                    budget_category.historical_sub_categories.create(
                       group_name: sub_category[:group_name], 
                       name: sub_category[:name], 
-                      budgeted: sub_category[:budgeted]
+                      budgeted: sub_category[:budgeted],
+                      month: sub_category[:month]
                     )
                 end
             end
@@ -19,9 +18,4 @@ class BudgetCategory < ApplicationRecord
         Rails.logger.error("Failed to update categories: #{e.message}")
         raise
     end
-
-    def self.import_previous_months()
-        puts "test"
-    end
 end
-  
