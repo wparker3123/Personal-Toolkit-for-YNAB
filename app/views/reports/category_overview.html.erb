@@ -30,7 +30,9 @@
             elem.style.color = getColor(name);
             <% end %>
         }
+        updateTableRow = () => {
 
+        }
         updateTotalValue = (categories = []) => {
             let sum = 0;
             if (!categories.length){
@@ -163,7 +165,7 @@
     </script>
 
     <script>
-      testAjax = function (month){
+      updatePieChart = function (month){
           const csrfToken = $('meta[name="csrf-token"]').attr('content');
           $.ajax({
               url: "fetch_prev_category_assignments",
@@ -210,6 +212,7 @@
                       nameCell.innerHTML = `<i class="fas fa-circle"></i> ${category.name}`;
 
                       const amountCell = document.createElement('td');
+                      amountCell.id = category.name + '-total';
                       amountCell.textContent = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(category.y);
 
                       row.appendChild(nameCell);
@@ -254,12 +257,18 @@
                   }<%= ',' unless index == @sub_categories.length - 1 %>
                   <% end %>
               ]
+
+              budgetCategoryChart.series[0].data.forEach((category) => {
+                  categoryTotal = document.getElementById(category.name?.replace('&amp;', '&') + '-total');
+                  categoryTotal.textContent = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(category.y);
+              });
+
               resetColorMapping();
               setCategoryIconColors();
               updateTotalDecoration();
               updateTotalValue()
           } else{
-              testAjax(month);
+              updatePieChart(month);
           }
 
       }
